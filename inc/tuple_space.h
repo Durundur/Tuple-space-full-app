@@ -47,11 +47,12 @@ int ts_inp(char *, field_t *, int);
 int ts_rd(char *, field_t *, int);
 int ts_rdp(char *, field_t *, int);
 void ts_print();
-void t_print();
+void t_print(Tuple *t);
 void ts_init();
 int copy_tuple_to_template(char *, field_t *, int, int);
 int fields_match(field_t *, field_t *);
 int tuple_matches(Tuple *, char *, field_t *, int);
 int find_matched_tuple(char *, field_t *, int, int *);
 int delete_tupe_from_tuple_space(int);
+int get_fields_size(field_t *);
 #endif

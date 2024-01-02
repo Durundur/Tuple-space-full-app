@@ -9,31 +9,29 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include "../inc/header.h"
+#include "../inc/server.h"
 
-void start_udp_server();
+void start_udp_server(void);
 void thread_task(void *);
-
-#define SERVER_PORT "4000"
-#define MAX_BUFF 256
-#define MAX_THREADS 100
-
-typedef struct
-{
-	int s;
-	struct sockaddr_in *c;
-	char recv_buff[MAX_BUFF];
-} thread_task_args;
 
 void thread_task(void *args)
 {
 	printf("%s\n", "new thread");
 	thread_task_args *a = (thread_task_args *)args;
-	printf("recv: %s \n", a->recv_buff);
-	int pos = sendto(a->s, a->recv_buff, strlen(a->recv_buff), 0, (const struct sockaddr *)a->c, sizeof(*(a->c)));
-	if (pos < 0)
-	{
-		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-	}
+	printf("%s \n", "recv: ");
+	printf("%d \n", sizeof(a->recv_buff));
+
+	// for (int i = 0; i < MAX_BUFF; i++)
+	// {
+	// 	printf("0x%x ", a->recv_buff[i]);
+	// }
+
+	// int pos = sendto(a->s, a->recv_buff, strlen(a->recv_buff), 0, (const struct sockaddr *)a->c, sizeof(*(a->c)));
+	// if (pos < 0)
+	// {
+	// 	printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+	// }
 	free(a->c);
 	free(a);
 	pthread_exit(0);
@@ -41,9 +39,9 @@ void thread_task(void *args)
 
 void start_udp_server()
 {
-	char recv_buff[MAX_BUFF];
+	unsigned char recv_buff[MAX_BUFF];
 	pthread_t thread_id;
-	struct addrinfo h, *r = NULL;
+	struct addrinfo hints, *r = NULL;
 	struct sockaddr_in c;
 	int s, c_len = sizeof(c);
 	memset(&h, 0, sizeof(struct addrinfo));
@@ -68,18 +66,19 @@ void start_udp_server()
 	}
 	for (;;)
 	{
-		if ((pos = recvfrom(s, &recv_buff, MAX_BUFF, 0, (struct sockaddr *)&c, &c_len)) < 0)
+		if ((pos = recvfrom(s, recv_buff, MAX_BUFF, 0, (struct sockaddr *)&c, &c_len)) < 0)
 		{
 			printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
 			continue;
 		}
-		recv_buff[pos] = '\0';
+		printf("received %d bytes \n", pos);
 		thread_task_args *args = malloc(sizeof(thread_task_args));
 		args->s = s;
 		args->c = malloc(sizeof(struct sockaddr_in));
 		memcpy(args->c, &c, sizeof(struct sockaddr_in));
-		strcpy(args->recv_buff, recv_buff);
-		if (pthread_create(&thread_id, NULL, thread_task, args) != 0)
+		memcpy(args->recv_buff, recv_buff, sizeof(recv_buff));
+		memset(recv_buff, 0);
+		if (pthread_create(&thread_id, NULL, (void *)thread_task, args) != 0)
 		{
 			printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
 		}

@@ -1,4 +1,4 @@
-#include "tuple_space.h"
+#include "../inc/tuple_space.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
