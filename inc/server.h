@@ -1,6 +1,5 @@
 #ifndef SERVER_H
 #define SERVER_H
-
 #include "header.h"
 
 typedef struct

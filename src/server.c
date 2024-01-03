@@ -19,19 +19,12 @@ void thread_task(void *args)
 {
 	printf("%s\n", "new thread");
 	thread_task_args *a = (thread_task_args *)args;
-	printf("%s \n", "recv: ");
-	printf("%d \n", sizeof(a->recv_buff));
-
-	// for (int i = 0; i < MAX_BUFF; i++)
-	// {
-	// 	printf("0x%x ", a->recv_buff[i]);
-	// }
-
-	// int pos = sendto(a->s, a->recv_buff, strlen(a->recv_buff), 0, (const struct sockaddr *)a->c, sizeof(*(a->c)));
-	// if (pos < 0)
-	// {
-	// 	printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-	// }
+	printf("%s \n", "recv: ", a->recv_buff);
+	int pos = sendto(a->s, a->recv_buff, strlen(a->recv_buff), 0, (const struct sockaddr *)a->c, sizeof(*(a->c)));
+	if (pos < 0)
+	{
+		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+	}
 	free(a->c);
 	free(a);
 	pthread_exit(0);

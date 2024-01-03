@@ -12,6 +12,10 @@
 #define TS_FAILURE 0
 #define MAX_TUPLE_SPACE 128
 #define MAX_STRING_SIZE 50
+
+#define TS_INT_SIZE 4
+#define TS_FLOAT_SIZE 8
+
 typedef struct
 {
 	int is_actual;
@@ -54,5 +58,4 @@ int fields_match(field_t *, field_t *);
 int tuple_matches(Tuple *, char *, field_t *, int);
 int find_matched_tuple(char *, field_t *, int, int *);
 int delete_tupe_from_tuple_space(int);
-int get_fields_size(field_t *);
 #endif
