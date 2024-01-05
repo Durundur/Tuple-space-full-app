@@ -6,36 +6,60 @@
 
 static TupleSpace tuple_space;
 
-// Function to add a tuple to the tuple space
 int ts_out(char *name, field_t *fields, int fields_size)
+{
+	
+}
+
+int ts_rdp(char *name, field_t *fields, int fields_size)
+{
+	
+}
+
+int ts_inp(char *name, field_t *fields, int fields_size)
+{
+	
+}
+
+
+int ts_in(char *name, field_t *fields, int fields_size)
+{
+	
+}
+
+
+int ts_rd(char *name, field_t *fields, int fields_size)
+{
+	
+}
+
+int ts_add(char *name, field_t *fields, int fields_size)
 {
 	if (fields_size > 0 && tuple_space.size < MAX_TUPLE_SPACE)
 	{
-		int index = tuple_space.size;
-		Tuple *t = &tuple_space.tuples[index];
-		t->name = strdup(name);
-		if (t->name == NULL)
-		{
-			printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-			exit(-1);
-		}
-		t->fields = (field_t *)malloc(fields_size * sizeof(field_t));
-		if (t->fields == NULL)
-		{
-			printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-			exit(-1);
-		}
-		memcpy(t->fields, fields, fields_size * sizeof(field_t));
-		t->fields_size = fields_size;
+
+		Tuple *new_tuple = &tuple_space.tuples[tuple_space.size];
+		new_tuple->name = name;
+		// if (new_tuple->name == NULL)
+		// {
+		// 	printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+		// 	exit(-1);
+		// }
+		new_tuple->fields = fields;
+		// if (new_tuple->fields == NULL)
+		// {
+		// 	printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+		// 	exit(-1);
+		// }
+		// memcpy(new_tuple->fields, fields, fields_size * sizeof(field_t));
+		new_tuple->fields_size = fields_size;
 		tuple_space.size++;
 		return TS_SUCCESS;
 	}
 	return TS_FAILURE;
 }
 
-// Function to retrieve and remains a tuple with a matching template, no blocking
-int ts_rdp(char *name, field_t *fields, int fields_size)
-{
+int ts_get_tuple(char *name, field_t *fields, int fields_size){
 	int found_index;
 	if (find_matched_tuple(name, fields, fields_size, &found_index) == TS_SUCCESS)
 	{
@@ -44,48 +68,13 @@ int ts_rdp(char *name, field_t *fields, int fields_size)
 	}
 	return TS_FAILURE;
 }
-
-// Function to retrieve and remove a tuple with a matching template, no blocking
-int ts_inp(char *name, field_t *fields, int fields_size)
-{
+int ts_get_tuple_and_remove(char *name, field_t *fields, int fields_size){
 	int found_index;
 	if (find_matched_tuple(name, fields, fields_size, &found_index) == TS_SUCCESS)
 	{
 		copy_tuple_to_template(name, fields, fields_size, found_index);
 		delete_tupe_from_tuple_space(found_index);
 		return TS_SUCCESS;
-	}
-	return TS_FAILURE;
-}
-
-// Function to retrieve and remove a tuple with a matching template, blocking
-int ts_in(char *name, field_t *fields, int fields_size)
-{
-	int found_index;
-	for(;;){
-		if (find_matched_tuple(name, fields, fields_size, &found_index) == TS_SUCCESS)
-		{
-			copy_tuple_to_template(name, fields, fields_size, found_index);
-			delete_tupe_from_tuple_space(found_index);
-			break;
-			return TS_SUCCESS;
-		}
-	}
-	return TS_FAILURE;
-}
-
-// Function to retrieve and remains a tuple with a matching template, blocking
-int ts_rd(char *name, field_t *fields, int fields_size)
-{
-	int found_index;
-	for (;;)
-	{
-		if (find_matched_tuple(name, fields, fields_size, &found_index) == TS_SUCCESS)
-		{
-			copy_tuple_to_template(name, fields, fields_size, found_index);
-			break;
-			return TS_SUCCESS;
-		}
 	}
 	return TS_FAILURE;
 }

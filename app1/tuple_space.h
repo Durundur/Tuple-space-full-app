@@ -10,8 +10,11 @@
 //
 #define TS_SUCCESS 1
 #define TS_FAILURE 0
+#define MAX_TUPLE_SPACE 128
+#define MAX_STRING_SIZE 50
 
-#define MAX_TUPLE_SPACE 56
+#define TS_INT_SIZE 4
+#define TS_FLOAT_SIZE 8
 
 typedef struct
 {
@@ -42,24 +45,11 @@ typedef struct
 /* these functions return TS_SUCCESS or TS_FAILURE */
 /* parameters: tuple name, other fields, no. of other fields */
 
-// Function to add a tuple to the tuple space
 int ts_out(char *, field_t *, int);
-
-// Function to retrieve and remove a tuple with a matching template, blocking
 int ts_in(char *, field_t *, int);
-
-// Function to retrieve and remove a tuple with a matching template, no blocking
 int ts_inp(char *, field_t *, int);
-
-// Function to retrieve and remains a tuple with a matching template, blocking
 int ts_rd(char *, field_t *, int);
-
-// Function to retrieve and remains a tuple with a matching template, no blocking
 int ts_rdp(char *, field_t *, int);
-
-int ts_add(char *name, field_t *fields, int fields_size);
-int ts_get_tuple(char *name, field_t *fields, int fields_size);
-int ts_get_tuple_and_remove(char *name, field_t *fields, int fields_size);
 
 void ts_print();
 void t_print(Tuple *t);
