@@ -5,5 +5,5 @@ typedef enum
 {
     False,
     True
-} boolean;
+} Boolean;
 #endif

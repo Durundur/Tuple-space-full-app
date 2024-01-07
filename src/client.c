@@ -1,57 +1,62 @@
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netdb.h>
-#include <errno.h>
-#include <unistd.h>
-#include <time.h>
-#include <sys/select.h>
+#include <stdio.h>
 #include "../inc/header.h"
-#include "../inc/tuple_space.h"
 #include "../inc/protocol.h"
+#include <string.h>
 
-void start_udp_client()
+int main(void)
 {
-	struct addrinfo hints, client_addr_info, *server_addr_info = NULL;
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = PF_INET;
-	hints.ai_socktype = SOCK_DGRAM;
-	int s, c_addr_len = sizeof(client_addr_info);
-	int pos;
+	ts_init();
+	printf("%s \n", "start client");
 	uint8_t buff[MAX_BUFF];
-	if (getaddrinfo(SERVER_ADDR, SERVER_PORT, &hints, &server_addr_info) != 0)
-	{
-		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-		exit(-1);
-	}
-	if ((s = socket(server_addr_info->ai_family, server_addr_info->ai_socktype, server_addr_info->ai_protocol)) == -1)
-	{
-		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-		exit(-1);
-	}
+	field_t template[2];
+	template[0].is_actual = TS_YES;
+	template[0].type = TS_INT;
+	template[0].data.int_field = 100;
+	template[1].is_actual = TS_YES;
+	template[1].type = TS_FLOAT;
+	template[1].data.float_field = 1.11;
+	ts_add("is prime", template, 2);
+	template[0].is_actual = TS_YES;
+	template[0].type = TS_INT;
+	template[0].data.int_field = 44;
+	template[1].is_actual = TS_YES;
+	template[1].type = TS_FLOAT;
+	template[1].data.float_field = 41.41;
+	ts_add("is prime", template, 2);
 
-	pos = sendto(s, (void *)buff, MAX_BUFF, 0, server_addr_info->ai_addr, server_addr_info->ai_addrlen);
-
-	if (pos < 0)
-	{
-		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-	}
-	for (;;)
-	{
-		if ((pos = recvfrom(s, (void *)buff, MAX_BUFF, 0, (struct sockaddr *)&client_addr_info, &c_addr_len)) < 0)
-		{
-			printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
-			continue;
-		}
-		buff[pos] = '\0';
-		printf("Recv: %s\n", buff);
-	}
-	freeaddrinfo(server_addr_info);
-	close(s);
+	template[0].is_actual = TS_NO;
+	template[0].type = TS_INT;
+	template[1].is_actual = TS_NO;
+	template[1].type = TS_FLOAT;
+	Tuple t = {"is prime", template, 2};
+	ts_print();
+	ts_get_tuple_and_remove(t.name, t.fields, t.fields_size);
+	t_print(&t);
+	ts_print();
 }
+
+// Tuple tuple = {"nice_constants", template, 2};
+// int res;
+// res = serialize_tuple(buff, &tuple, 3);
+// if (res > 0)
+// {
+// 	printf("serialize: \n");
+// 	for (int i = 0; i < res; i++)
+// 	{
+// 		printf(" %d \n", buff[i]);
+// 	}
+// 	Tuple new_tuple;
+// 	memset(&new_tuple, 0, sizeof(Tuple));
+// 	int message_type = 0;
+// 	int res2 = deserialize_tuple(&new_tuple, buff, &message_type);
+// 	if (res2 > 0)
+// 	{
+// 		printf("deserialize: \n");
+// 		for (int i = 0; i < res2; i++)
+// 		{
+// 			printf(" %d \n", buff[i]);
+// 		}
+// 		t_print(&new_tuple);
+// 	}
+// }
