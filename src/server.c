@@ -15,16 +15,19 @@
 
 void thread_task(void *args)
 {
-	printf("%s\n", "Received new request");
 	thread_task_args *a = (thread_task_args *)args;
 	Tuple tuple;
 	memset(&tuple, 0, sizeof(Tuple));
 	int message_type = 0;
-	if (deserialize_tuple(&tuple, a->buff, &message_type) > 0)
+	int request_len = deserialize_tuple(&tuple, a->buff, &message_type);
+	if (request_len > 0)
 	{
-		if (process_request(&tuple, a->buff, message_type) == 1)
+		t_print(&tuple);
+		printf("deserialize len: %d \n", request_len);
+		int response_len = process_request(&tuple, a->buff, message_type);
+		if (response_len > 0)
 		{
-			int pos = sendto(a->s, a->buff, strlen(a->buff), 0, (const struct sockaddr *)a->c, sizeof(*(a->c)));
+			int pos = sendto(a->s, a->buff, response_len, 0, (const struct sockaddr *)a->c, sizeof(*(a->c)));
 			if (pos < 0)
 			{
 				printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
@@ -34,6 +37,8 @@ void thread_task(void *args)
 	free(a->c);
 	free(a->buff);
 	free(a);
+	free(tuple.fields);
+	free(tuple.name);
 	pthread_exit(0);
 }
 
@@ -45,6 +50,7 @@ int process_request(Tuple *tuple, uint8_t *buff, int message_type)
 		if (ts_add(tuple->name, tuple->fields, tuple->fields_size) == 1)
 		{
 			// wysylac jakies potwierdzenie dodania tupla?
+			// ts_print();
 			return TS_SUCCESS;
 		}
 		else
@@ -52,16 +58,23 @@ int process_request(Tuple *tuple, uint8_t *buff, int message_type)
 			printf("ERROR while adding new tuple (%s:%d)\n", __FILE__, __LINE__);
 			return TS_FAILURE;
 		}
-	case PROTOCOL_TS_IN_MESSAGE || PROTOCOL_TS_INP_MESSAGE:
+	case PROTOCOL_TS_IN_MESSAGE:
+	case PROTOCOL_TS_INP_MESSAGE:
 		if (ts_get_tuple_and_remove(tuple->name, tuple->fields, tuple->fields_size) == 1)
 		{
-			if (serialize_tuple(buff, tuple, 99) > 0)
+			printf("Tuple send as response: \n");
+			t_print(tuple);
+			int serialize_len = serialize_tuple(buff, tuple, 99);
+			if (serialize_len > 0)
 			{
-				return TS_SUCCESS;
+				ts_print();
+				return serialize_len;
 			}
+			return TS_FAILURE;
 		}
 		return TS_FAILURE;
-	case PROTOCOL_TS_RD_MESSAGE || PROTOCOL_TS_RDP_MESSAGE:
+	case PROTOCOL_TS_RD_MESSAGE:
+	case PROTOCOL_TS_RDP_MESSAGE:
 		if (ts_get_tuple(tuple->name, tuple->fields, tuple->fields_size) == 1)
 		{
 			if (serialize_tuple(buff, tuple, 99) > 0)
@@ -109,19 +122,19 @@ int main()
 			printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
 			continue;
 		}
-		printf("received %d bytes \n", pos);
+		printf("Received new request (%d bytes) \n", pos);
 		thread_task_args *args = malloc(sizeof(thread_task_args));
 		args->s = s;
 		args->c = malloc(sizeof(struct sockaddr_in));
 		memcpy(args->c, &c, sizeof(struct sockaddr_in));
-		args->buff = malloc(pos);
+		args->buff = calloc(MAX_BUFF, sizeof(uint8_t));
 		memcpy(args->buff, recv_buff, pos);
-		memset(recv_buff, 0, MAX_BUFF);
 		if (pthread_create(&thread_id, NULL, (void *)thread_task, args) != 0)
 		{
 			printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
 			continue;
 		}
+		memset(recv_buff, 0, MAX_BUFF);
 	}
 	freeaddrinfo(r);
 	close(s);

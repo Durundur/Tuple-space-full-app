@@ -3,7 +3,7 @@
 #include "./header.h"
 #include "./tuple_space.h"
 
-void thread_task(void *);
+void thread_task(void *args);
 int process_request(Tuple *tuple, uint8_t *buff, int message_type);
 
 typedef struct

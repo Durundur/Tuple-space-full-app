@@ -1,3 +1,0 @@
-#define MAX_BUFF 256
-#define APP_1_WORKER_PORT 19870
-

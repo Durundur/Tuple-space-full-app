@@ -4,14 +4,18 @@
 #include "./tuple_space.h"
 #include <stdint.h>
 
-#define PROTOCOL_INT_SIZE 4
-#define PROTOCOL_FLOAT_SIZE 8
+#define PROTOCOL_INT_SIZE 		4
+#define PROTOCOL_FLOAT_SIZE 	8
+
+#define PROTOCOL_INT_FIELD 		TS_INT
+#define PROTOCOL_FLOAT_FIELD 	TS_FLOAT
+#define PROTOCOL_STRING_FIELD 	TS_STRING
 
 #define PROTOCOL_TS_OUT_MESSAGE 7
-#define PROTOCOL_TS_IN_MESSAGE 8
+#define PROTOCOL_TS_IN_MESSAGE 	8
 #define PROTOCOL_TS_INP_MESSAGE 9
-#define PROTOCOL_TS_RD_MESSAGE 10
-#define PROTOCOL_TS_RDP_MESSAGE
+#define PROTOCOL_TS_RD_MESSAGE 	10
+#define PROTOCOL_TS_RDP_MESSAGE 11
 
 int deserialize_tuple(Tuple *tuple_dst, uint8_t *buff_src, int *message_type);
 int serialize_tuple(uint8_t *buff_dst, Tuple *tuple_src, int message_type);

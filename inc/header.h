@@ -3,5 +3,9 @@
 
 #define MAX_BUFF 256
 #define SERVER_PORT "4000"
+#define SERVER_PORT_INT 4000
+#define APP1_MANAGER_PORT 6666
+#define APP1_WORKER_PORT 6667
+
 
 #endif
