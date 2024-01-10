@@ -27,7 +27,7 @@ int ts_out(char *name, field_t *fields, int fields_size)
 	if (buff_len > 0)
 	{
 		Udp_ptr->beginPacket(*server_ip_ptr, SERVER_PORT_INT);
-		int r = Udp_ptr->write(buff_ptr, buff_len);
+		Udp_ptr->write(buff_ptr, buff_len);
 		Udp_ptr->endPacket();
 		return TS_SUCCESS;
 	}
@@ -36,32 +36,25 @@ int ts_out(char *name, field_t *fields, int fields_size)
 
 int ts_rdp(char *name, field_t *fields, int fields_size)
 {
-}
-
-int ts_inp(char *name, field_t *fields, int fields_size)
-{
-}
-
-int ts_in(char *name, field_t *fields, int fields_size)
-{
 	Tuple tuple = {name, fields, fields_size};
-	int buff_len = serialize_tuple(buff_ptr, &tuple, PROTOCOL_TS_IN_MESSAGE);
+	int buff_len = serialize_tuple(buff_ptr, &tuple, PROTOCOL_TS_INP_MESSAGE);
 	if (buff_len > 0)
 	{
 		Udp_ptr->beginPacket(*server_ip_ptr, SERVER_PORT_INT);
-		int request = Udp_ptr->write(buff_ptr, buff_len);
+		Udp_ptr->write(buff_ptr, buff_len);
 		Udp_ptr->endPacket();
-		while(1)
+		while (1)
 		{
 			int response_packet = Udp_ptr->parsePacket();
 			if (response_packet)
 			{
 				int response_len = Udp_ptr->read(buff_ptr, MAX_BUFF);
 				int message_type = 0;
-				if(deserialize_tuple(&tuple, buff_ptr, &message_type) > 0){
-					strcpy(name, tuple.name);
-					memcpy(fields, tuple.fields, fields_size * sizeof(field_t));
-					break;
+				if (deserialize_tuple(&tuple, buff_ptr, &message_type) > 0)
+				{
+					t_print(&tuple);
+					memcpy(fields, tuple.fields, tuple.fields_size * sizeof(field_t));
+					return TS_SUCCESS;
 				}
 				return TS_FAILURE;
 			}
@@ -74,13 +67,75 @@ int ts_in(char *name, field_t *fields, int fields_size)
 int ts_rd(char *name, field_t *fields, int fields_size)
 {
 }
+
+int ts_inp(char *name, field_t *fields, int fields_size)
+{
+	Tuple tuple = {name, fields, fields_size};
+	int buff_len = serialize_tuple(buff_ptr, &tuple, PROTOCOL_TS_INP_MESSAGE);
+	if (buff_len > 0)
+	{
+		Udp_ptr->beginPacket(*server_ip_ptr, SERVER_PORT_INT);
+		Udp_ptr->write(buff_ptr, buff_len);
+		Udp_ptr->endPacket();
+		while (1)
+		{
+			int response_packet = Udp_ptr->parsePacket();
+			if (response_packet)
+			{
+				int response_len = Udp_ptr->read(buff_ptr, MAX_BUFF);
+				int message_type = 0;
+				if (deserialize_tuple(&tuple, buff_ptr, &message_type) > 0)
+				{
+					t_print(&tuple);
+					memcpy(fields, tuple.fields, tuple.fields_size * sizeof(field_t));
+					return TS_SUCCESS;
+				}
+				return TS_FAILURE;
+			}
+		}
+		return TS_SUCCESS;
+	}
+	return TS_FAILURE;
+}
+
+int ts_in(char *name, field_t *fields, int fields_size)
+{
+	Tuple tuple = {name, fields, fields_size};
+	t_print(&tuple);
+	int buff_len = serialize_tuple(buff_ptr, &tuple, PROTOCOL_TS_IN_MESSAGE);
+	if (buff_len > 0)
+	{
+		Udp_ptr->beginPacket(*server_ip_ptr, SERVER_PORT_INT);
+		Udp_ptr->write(buff_ptr, buff_len);
+		Udp_ptr->endPacket();
+		while (1)
+		{
+			int response_packet = Udp_ptr->parsePacket();
+			if (response_packet)
+			{
+				int response_len = Udp_ptr->read(buff_ptr, MAX_BUFF);
+				int message_type = 0;
+				if (deserialize_tuple(&tuple, buff_ptr, &message_type) > 0)
+				{
+					t_print(&tuple);
+					memcpy(fields, tuple.fields, tuple.fields_size * sizeof(field_t));
+					return TS_SUCCESS;
+				}
+				return TS_FAILURE;
+			}
+		}
+		return TS_SUCCESS;
+	}
+	return TS_FAILURE;
+}
+
 #endif
+
 
 int ts_add(char *name, field_t *fields, int fields_size)
 {
 	if (fields_size > 0 && tuple_space.size < MAX_TUPLE_SPACE)
 	{
-
 		Tuple *new_tuple = &tuple_space.tuples[tuple_space.size];
 		new_tuple->name = strdup(name);
 		if (new_tuple->name == NULL)
@@ -127,47 +182,47 @@ int ts_get_tuple_and_remove(char *name, field_t *fields, int fields_size)
 void t_print(Tuple *t)
 {
 #ifdef ARDUINO
-	Serial.println("  Name: " + String(t->name));
-	Serial.println("  Fields:");
+	Serial.print("Name: " + String(t->name));
 	for (int j = 0; j < t->fields_size; ++j)
 	{
-		Serial.println("    Field " + String(j + 1) + ":");
-		Serial.println("      Is Actual: " + String(t->fields[j].is_actual ? "YES" : "NO"));
-		Serial.println("      Type: " + String(get_type_name(t->fields[j].type)));
+		Serial.print(" Field " + String(j + 1) + ":");
+		Serial.print(" Is Actual: " + String(t->fields[j].is_actual ? "YES" : "NO"));
+		Serial.print(" Type: " + String(get_type_name(t->fields[j].type)));
 		if (t->fields[j].type == TS_INT && t->fields[j].is_actual)
 		{
-			Serial.println("      Data (Int): " + String(t->fields[j].data.int_field));
+			Serial.print(" Data: " + String(t->fields[j].data.int_field));
 		}
 		else if (t->fields[j].type == TS_FLOAT && t->fields[j].is_actual)
 		{
-			Serial.println("      Data (Float): " + String(t->fields[j].data.float_field));
+			Serial.print(" Data: " + String(t->fields[j].data.float_field));
 		}
 		else if (t->fields[j].type == TS_STRING && t->fields[j].is_actual)
 		{
-			Serial.println("      Data (String): " + String(t->fields[j].data.string_field));
+			Serial.print(" Data: " + String(t->fields[j].data.string_field));
 		}
 	}
+	Serial.println("");
 #else
-	printf("  Name: %s\n", t->name);
-	printf("  Fields:\n");
+	printf("Name: %s", t->name);
 	for (int j = 0; j < t->fields_size; ++j)
 	{
-		printf("    Field %d:\n", j + 1);
-		printf("      Is Actual: %s\n", t->fields[j].is_actual ? "YES" : "NO");
-		printf("      Type: %s\n", get_type_name(t->fields[j].type));
+		printf(" Field %d:", j + 1);
+		printf(" Is Actual: %s", t->fields[j].is_actual ? "YES" : "NO");
+		printf(" Type: %s", get_type_name(t->fields[j].type));
 		if (t->fields[j].type == TS_INT && t->fields[j].is_actual)
 		{
-			printf("      Data (Int): %d\n", t->fields[j].data.int_field);
+			printf(" Data: %d", t->fields[j].data.int_field);
 		}
 		else if (t->fields[j].type == TS_FLOAT && t->fields[j].is_actual)
 		{
-			printf("      Data (Float): %f\n", t->fields[j].data.float_field);
+			printf(" Data: %f", t->fields[j].data.float_field);
 		}
 		else if (t->fields[j].type == TS_STRING && t->fields[j].is_actual)
 		{
-			printf("      Data (String): %s\n", t->fields[j].data.string_field);
+			printf(" Data: %s", t->fields[j].data.string_field);
 		}
 	}
+	printf("\n");
 #endif
 }
 
@@ -192,9 +247,8 @@ void ts_print()
 	for (int i = 0; i < tuple_space.size; ++i)
 	{
 		Tuple *t = &tuple_space.tuples[i];
-		printf("Tuple %d:\n", i + 1);
+		printf("Tuple %d:", i + 1);
 		t_print(t);
-		printf("\n");
 	}
 }
 
@@ -206,14 +260,14 @@ void ts_init()
 	field_t templ[1];
 	templ[0].is_actual = TS_YES;
 	templ[0].type = TS_INT;
-	templ[0].data.int_field = -1;
-	ts_add("is_prime", templ, 1);
+	templ[0].data.int_field = 4;
+	ts_add("check_if_prime", templ, 1);
 	templ[0].data.int_field = 12;
-	ts_add("is_prime", templ, 1);
+	ts_add("check_if_prime", templ, 1);
 	templ[0].data.int_field = 13;
-	ts_add("is_prime", templ, 1);
+	ts_add("check_if_prime", templ, 1);
 	templ[0].data.int_field = 55;
-	ts_add("is_prime", templ, 1);
+	ts_add("check_if_prime", templ, 1);
 	ts_print();
 }
 
@@ -236,8 +290,8 @@ int copy_tuple_to_template(char *name, field_t *fields, int fields_size, int tup
 			}
 			if ((fields + i)->type == TS_STRING)
 			{
-				//czy tu trzeba zwolnic name
-				//free((fields + i)->data.string_field);
+				// czy tu trzeba zwolnic name
+				// free((fields + i)->data.string_field);
 				(fields + i)->data.string_field = strdup(((t->fields) + i)->data.string_field);
 				(fields + i)->is_actual = TS_YES;
 			}
@@ -290,7 +344,8 @@ int tuple_matches(Tuple *t, char *name, field_t *fields, int fields_size)
 	{
 		for (int i = 0; i < fields_size; i++)
 		{
-			if(fields_match(fields + i, (t->fields) + i) == 0){
+			if (fields_match(fields + i, (t->fields) + i) == 0)
+			{
 				return TS_FAILURE;
 			}
 			return TS_SUCCESS;
