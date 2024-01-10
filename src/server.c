@@ -23,7 +23,6 @@ void thread_task(void *args)
 	if (request_len > 0)
 	{
 		t_print(&tuple);
-		printf("deserialize len: %d \n", request_len);
 		int response_len = process_request(&tuple, a->buff, message_type);
 		if (response_len > 0)
 		{
@@ -47,44 +46,73 @@ int process_request(Tuple *tuple, uint8_t *buff, int message_type)
 	switch (message_type)
 	{
 	case PROTOCOL_TS_OUT_MESSAGE:
-		if (ts_add(tuple->name, tuple->fields, tuple->fields_size) == 1)
+		if (ts_add(tuple->name, tuple->fields, tuple->fields_size) == TS_FAILURE)
 		{
-			// wysylac jakies potwierdzenie dodania tupla?
-			// ts_print();
-			return TS_SUCCESS;
+			// printf("ERROR while adding new tuple (%s:%d)\n", __FILE__, __LINE__);
+			return construct_response(buff, PROTOCOL_TS_FAILURE_RESPONSE);
 		}
 		else
 		{
-			printf("ERROR while adding new tuple (%s:%d)\n", __FILE__, __LINE__);
-			return TS_FAILURE;
+			ts_print();
+			return construct_response(buff, PROTOCOL_TS_SUCCESS_RESPONSE);
 		}
 	case PROTOCOL_TS_IN_MESSAGE:
+		while (1)
+		{
+			if (ts_get_tuple_and_remove(tuple->name, tuple->fields, tuple->fields_size) == TS_SUCCESS)
+			{
+				int serialize_len = serialize_tuple(buff, tuple, PROTOCOL_TS_SUCCESS_RESPONSE);
+				if (serialize_len > 0)
+				{
+					ts_print();
+					return serialize_len;
+				}
+				return construct_response(buff, PROTOCOL_TS_FAILURE_RESPONSE);
+			}
+		}
+
 	case PROTOCOL_TS_INP_MESSAGE:
 		if (ts_get_tuple_and_remove(tuple->name, tuple->fields, tuple->fields_size) == 1)
 		{
-			printf("Tuple send as response: \n");
-			t_print(tuple);
-			int serialize_len = serialize_tuple(buff, tuple, 99);
+			int serialize_len = serialize_tuple(buff, tuple, PROTOCOL_TS_SUCCESS_RESPONSE);
 			if (serialize_len > 0)
 			{
 				ts_print();
 				return serialize_len;
 			}
-			return TS_FAILURE;
+			return construct_response(buff, PROTOCOL_TS_FAILURE_RESPONSE);
 		}
-		return TS_FAILURE;
+		return construct_response(buff, PROTOCOL_TS_FAILURE_RESPONSE);
+
 	case PROTOCOL_TS_RD_MESSAGE:
+		while (1)
+		{
+			if (ts_get_tuple(tuple->name, tuple->fields, tuple->fields_size) == 1)
+			{
+				int serialize_len = serialize_tuple(buff, tuple, PROTOCOL_TS_SUCCESS_RESPONSE);
+				if (serialize_len > 0)
+				{
+					ts_print();
+					return serialize_len;
+				}
+				return construct_response(buff, PROTOCOL_TS_FAILURE_RESPONSE);
+			}
+			return construct_response(buff, PROTOCOL_TS_FAILURE_RESPONSE);
+		}
+
 	case PROTOCOL_TS_RDP_MESSAGE:
 		if (ts_get_tuple(tuple->name, tuple->fields, tuple->fields_size) == 1)
 		{
-			if (serialize_tuple(buff, tuple, 99) > 0)
+			int serialize_len = serialize_tuple(buff, tuple, PROTOCOL_TS_SUCCESS_RESPONSE);
+			if (serialize_len > 0)
 			{
-				return TS_SUCCESS;
+				ts_print();
+				return serialize_len;
 			}
+			return construct_response(buff, PROTOCOL_TS_FAILURE_RESPONSE);
 		}
-		return TS_FAILURE;
+		return construct_response(buff, PROTOCOL_TS_FAILURE_RESPONSE);
 	}
-	return TS_FAILURE;
 }
 
 int main()

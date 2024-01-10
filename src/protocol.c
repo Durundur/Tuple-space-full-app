@@ -49,6 +49,7 @@ int deserialize_tuple(Tuple *tuple_dst, uint8_t *buff_src, int *message_type)
 int serialize_tuple(uint8_t *buff_dst, Tuple *tuple_src, int message_type)
 {
 	uint8_t *buff_ptr = buff_dst;
+	memset(buff_ptr, 0, MAX_BUFF);
 	buff_ptr = copy_value_to_buff(buff_ptr, &message_type, 1);
 	int tuple_name_len = strlen(tuple_src->name);
 	buff_ptr = copy_value_to_buff(buff_ptr, &tuple_name_len, 2);
@@ -70,7 +71,14 @@ void *copy_value_to_buff(void *dst, void *src, int size)
 	return dst + size;
 }
 
-uint8_t *copy_fields_from_buff(Tuple *tuple_dst, uint8_t *buff_src)
+int construct_response(uint8_t *buff_dst, int flag){
+	memset(buff_dst, 0, MAX_BUFF);
+	copy_value_to_buff(buff_dst, &flag, 1);
+	return 1;
+}
+
+	uint8_t *
+	copy_fields_from_buff(Tuple *tuple_dst, uint8_t *buff_src)
 {
 	tuple_dst->fields = calloc(tuple_dst->fields_size, sizeof(field_t));
 	if (tuple_dst->fields == NULL)
