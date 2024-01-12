@@ -1,0 +1,1 @@
+EBSimUnoEthCurses -ip 192.168.56.102 app1_manager.ino.hex

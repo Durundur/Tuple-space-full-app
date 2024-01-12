@@ -5,127 +5,237 @@
 #include <stdio.h>
 #include "../inc/header.h"
 #include "../inc/tuple_space.h"
+#include <errno.h>
 
-// buff
-//  3 | e 0 | 6e 69 63 65 5f 63 6f 6e 73 74 61 6e 74 73 | 3 | 0 | 4 | 64 0 0 0 | 1 | 8 | 8f c2 31 41 0 0 0 0 | 1 | b | 74 6f 20 6a 65 73 74 20 73 74 72
-//  1.| 2.  | 3.										   | 4.| 5.| 6.| 7.		  | 8.| 9.| 10.	                |11.|12.| 13.
-// 1. typ wiadomosci - 1bajt
-// 2. dlugosc nazwy - 2bajty
-// 3. nazwa
-// 4. liczba fieldów - 1bajt
-// 5. field is_actual - 1bajt
-// 6. dlugosc pola danych w field - 1bajt
-// 7. pole danych
-// 8. field is_actual - 1bajt
-//  ...
-//  zalozenie ze jak jest string to nie moze miec 4 lub 8 bajtow dlugosci, bo nie ma jak tego odroznic czy to int czy float
-
-// copy from serialized buff to Tuple
-Tuple *deserialize_tuple(uint8_t *buff_src)
+// from Tuple to serialized buff
+int serialize_message(uint8_t *buff_dst, Tuple *tuple_src, int version, int message_type)
 {
-	Tuple *tuple = malloc(sizeof(Tuple));
-	int message_type = 0;
-	buff_src = copy_value_from_buff(&message_type, buff_src, 1);
-	int tuple_name_len = 0;
-	buff_src = copy_value_from_buff(&tuple_name_len, buff_src, 2);
-	tuple->name = malloc(tuple_name_len);
-	buff_src = copy_value_from_buff(tuple->name, buff_src, tuple_name_len);
-	buff_src = copy_value_from_buff(&(tuple->fields_size), buff_src, 1);
-	buff_src = copy_fields_from_buff(tuple, buff_src);
-	return tuple;
+	uint8_t *buff_start_ptr = buff_dst;
+	memset(buff_dst, 0, MAX_BUFF);
+	set_version_and_payload_type(buff_dst, version, message_type);
+	buff_dst++;
+	set_payload_size(buff_dst, tuple_src->fields_size + 1);
+	buff_dst++;
+	buff_dst += set_tuple_name_to_buff(buff_dst, tuple_src->name);
+	buff_dst += set_fields_to_buff(buff_dst, tuple_src);
+	return buff_dst - buff_start_ptr;
 }
 
-// copy from Tuple to buff
-uint8_t *serialize_tuple(Tuple *tuple, int message_type)
+// from serialized buff to Tuple
+int deserialize_message(Tuple *tuple_dst, uint8_t *buff_src, int *version, int *message_type)
 {
-	uint8_t *buff = malloc(MAX_BUFF * sizeof(uint8_t));
-	uint8_t *buff_ptr = buff;
-	buff_ptr = copy_value_to_buff(buff_ptr, &message_type, 1);
-	int tuple_name_len = strlen(tuple->name);
-	buff_ptr = copy_value_to_buff(buff_ptr, &tuple_name_len, 2);
-	buff_ptr = copy_value_to_buff(buff_ptr, tuple->name, tuple_name_len);
-	buff_ptr = copy_value_to_buff(buff_ptr, &(tuple->fields_size), 1);
-	buff_ptr = copy_fields_to_buff(buff_ptr, tuple);
-	printf("serialized size %d \n", buff_ptr - buff);
-	return buff;
-}
-
-void *copy_value_from_buff(void *dst, void *src, int size)
-{
-	memcpy(dst, src, size);
-	return src + size;
-}
-
-void *copy_value_to_buff(void *dst, void *src, int size)
-{
-	memcpy(dst, src, size);
-	return dst + size;
-}
-
-uint8_t *copy_fields_from_buff(Tuple *tuple_dst, uint8_t *buff_src)
-{
-	tuple_dst->fields = malloc(tuple_dst->fields_size * sizeof(field_t));
-
-	for (int i = 0; i < tuple_dst->fields_size; i++)
+	uint8_t *buff_start_ptr = buff_src;
+	get_version_and_payload_type(version, message_type, buff_src);
+	buff_src++;
+	get_payload_size(&(tuple_dst->fields_size), buff_src);
+	if (tuple_dst->fields_size == 0)
 	{
-		field_t *field = &(tuple_dst->fields[i]);
-		buff_src = copy_field_from_buff(field, buff_src);
+		return TS_SUCCESS;
 	}
-	return buff_src;
+	buff_src++;
+	buff_src += get_tuple_name_from_buff(tuple_dst, buff_src);
+	buff_src += get_fields_from_buff(tuple_dst, buff_src);
+	return buff_src - buff_start_ptr;
 }
 
-uint8_t *copy_field_from_buff(field_t *field_dst, uint8_t *buff_src)
+int serialize_short_message(uint8_t *buff_dst, int version, int message_type)
 {
-	buff_src = copy_value_from_buff(&(field_dst->is_actual), buff_src, 1);
-	int data_field_len = 0;
-	buff_src = copy_value_from_buff(&data_field_len, buff_src, 1);
-	switch (data_field_len)
-	{
-	case TS_INT_SIZE:
-		field_dst->type = TS_INT;
-		buff_src = copy_value_from_buff(&(field_dst->data.int_field), buff_src, data_field_len);
-		break;
-	case TS_FLOAT_SIZE:
-		field_dst->type = TS_FLOAT;
-		buff_src = copy_value_from_buff(&(field_dst->data.float_field), buff_src, data_field_len);
-		break;
-	default:
-		field_dst->type = TS_STRING;
-		field_dst->data.string_field = malloc(data_field_len);
-		buff_src = copy_value_from_buff(field_dst->data.string_field, buff_src, data_field_len);
-		break;
-	}
+	uint8_t *buff_start_ptr = buff_dst;
+	memset(buff_dst, 0, MAX_BUFF);
+	set_version_and_payload_type(buff_dst, version, message_type);
+	buff_dst++;
+	set_payload_size(buff_dst, 1);
+	buff_dst++;
+	return buff_dst - buff_start_ptr;
 }
 
-uint8_t *copy_fields_to_buff(uint8_t *buff_dst, Tuple *tuple_src)
+int set_fields_to_buff(uint8_t *buff_dst, Tuple *tuple_src)
 {
-	for (int i = 0; i < tuple_src->fields_size; i++)
+	uint8_t *buff_start_ptr = buff_dst;
+	for (size_t i = 0; i < tuple_src->fields_size; i++)
 	{
-		field_t *field = &(tuple_src->fields)[i];
-		buff_dst = copy_field_to_buff(buff_dst, field);
+		set_is_actual_and_field_type(buff_dst, tuple_src->fields[i].is_actual, tuple_src->fields[i].type);
+		buff_dst++;
+		if (tuple_src->fields[i].is_actual == TS_NO)
+		{
+			continue;
+		}
+		switch (tuple_src->fields[i].type)
+		{
+		case TS_INT:
+			set_field_size(buff_dst, PROTOCOL_INT_SIZE);
+			buff_dst++;
+			buff_dst += copy_data(buff_dst, &(tuple_src->fields[i].data.int_field), PROTOCOL_INT_SIZE);
+			break;
+		case TS_FLOAT:
+			set_field_size(buff_dst, PROTOCOL_FLOAT_SIZE);
+			buff_dst++;
+			buff_dst += copy_data(buff_dst, &(tuple_src->fields[i].data.float_field), PROTOCOL_FLOAT_SIZE);
+			break;
+		case TS_STRING:
+			set_field_size(buff_dst, strlen(tuple_src->fields[i].data.string_field));
+			buff_dst++;
+			buff_dst += copy_data(buff_dst, tuple_src->fields[i].data.string_field, strlen(tuple_src->fields[i].data.string_field));
+			break;
+		}
 	}
-	return buff_dst;
+	return buff_dst - buff_start_ptr;
 }
 
-uint8_t *copy_field_to_buff(uint8_t *buff_dst, field_t *field_src)
+int set_tuple_name_to_buff(uint8_t *buff_dst, char *tuple_name)
 {
-	buff_dst = copy_value_to_buff(buff_dst, &(field_src->is_actual), 1);
-	switch (field_src->type)
+	uint8_t *buff_start_ptr = buff_dst;
+	set_is_actual_and_field_type(buff_dst, TS_YES, TS_STRING);
+	buff_dst++;
+	set_field_size(buff_dst, strlen(tuple_name));
+	buff_dst++;
+	buff_dst += copy_data(buff_dst, tuple_name, strlen(tuple_name));
+	return buff_dst - buff_start_ptr;
+}
+
+int copy_data(void *dst, void *src, int data_size)
+{
+	memcpy(dst, src, data_size);
+	return data_size;
+}
+
+void set_is_actual_and_field_type(uint8_t *buff_dst, int field_is_actual, int field_type)
+{
+	field_is_actual &= 0x01;
+	field_type &= 0x7F;
+	*buff_dst |= field_is_actual << 7;
+	*buff_dst |= field_type;
+}
+
+void set_field_size(uint8_t *buff_dst, int payload_size)
+{
+	payload_size &= 0xFF;
+	*buff_dst |= payload_size;
+}
+
+void set_version_and_payload_type(uint8_t *buff_dst, int version, int payload_type)
+{
+	version &= 0x03;
+	payload_type &= 0x3F;
+	*buff_dst |= version << 6;
+	*buff_dst |= payload_type;
+}
+
+void set_payload_size(uint8_t *buff_dst, int payload_size)
+{
+	payload_size &= 0xFF;
+	*buff_dst |= payload_size;
+}
+
+void get_version_and_payload_type(int *version_dst, int *payload_type_dst, const uint8_t *buff_src)
+{
+	*version_dst = (*buff_src >> 6) & 0x03;
+	*payload_type_dst = *buff_src & 0x3F;
+}
+
+void get_payload_size(int *payload_size_dst, const uint8_t *buff_src)
+{
+	*payload_size_dst = (*buff_src & 0xFF) - 1;
+}
+
+void get_is_actual_and_field_type(int *field_is_actual_dst, int *field_type_dst, const uint8_t *buff_src)
+{
+	*field_is_actual_dst = (*buff_src >> 7) & 0x01;
+	*field_type_dst = *buff_src & 0x7F;
+}
+
+void get_field_size(int *payload_size_dst, const uint8_t *buff_src)
+{
+	*payload_size_dst = *buff_src & 0xFF;
+}
+
+int get_field_data(void *field_data_dst, uint8_t *buff_src, int field_data_size)
+{
+	memcpy(field_data_dst, buff_src, field_data_size);
+	return field_data_size;
+}
+
+int get_tuple_name_from_buff(Tuple *tuple_dst, uint8_t *buff_src)
+{
+	uint8_t *buff_start_ptr = buff_src;
+	int is_actual = 0, field_type = 0, name_len = 0;
+	get_is_actual_and_field_type(&is_actual, &field_type, buff_src);
+	buff_src++;
+	get_field_size(&name_len, buff_src);
+	buff_src++;
+	tuple_dst->name = calloc(name_len, sizeof(unsigned char));
+	if (tuple_dst->name == NULL)
 	{
-	case TS_INT:
-		int int_size = 4;
-		buff_dst = copy_value_to_buff(buff_dst, &int_size, 1);
-		buff_dst = copy_value_to_buff(buff_dst, &(field_src->data.int_field), int_size);
-		return buff_dst;
-	case TS_FLOAT:
-		int float_size = 8;
-		buff_dst = copy_value_to_buff(buff_dst, &float_size, 1);
-		buff_dst = copy_value_to_buff(buff_dst, &(field_src->data.float_field), float_size);
-		return buff_dst;
-	case TS_STRING:
-		int string_len = strlen(field_src->data.string_field);
-		buff_dst = copy_value_to_buff(buff_dst, &string_len, 1);
-		buff_dst = copy_value_to_buff(buff_dst, field_src->data.string_field, string_len);
-		return buff_dst;
+#ifdef ARDUINO
+		Serial.print("Memory alocation error");
+		Serial.print(__LINE__);
+		Serial.print(__FILE__);
+		Serial.print("\n");
+#endif
+#ifndef ARDUINO
+		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+#endif
 	}
+	buff_src += copy_data(tuple_dst->name, buff_src, name_len);
+	return buff_src - buff_start_ptr;
+}
+
+int get_fields_from_buff(Tuple *tuple_dst, uint8_t *buff_src)
+{
+	uint8_t *buff_start_ptr = buff_src;
+	tuple_dst->fields = calloc(tuple_dst->fields_size, sizeof(field_t));
+	if (tuple_dst->fields == NULL)
+	{
+#ifdef ARDUINO
+		Serial.print("Memory alocation error");
+		Serial.print(__LINE__);
+		Serial.print(__FILE__);
+		Serial.print("\n");
+#endif
+#ifndef ARDUINO
+		printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+#endif
+	}
+	for (size_t i = 0; i < tuple_dst->fields_size; i++)
+	{
+		get_is_actual_and_field_type(&(tuple_dst->fields[i].is_actual), &(tuple_dst->fields[i].type), buff_src);
+		buff_src++;
+		if (tuple_dst->fields[i].is_actual == TS_NO)
+		{
+			continue;
+		}
+		int field_size = 0;
+		switch (tuple_dst->fields[i].type)
+		{
+		case TS_INT:
+			get_field_size(&field_size, buff_src);
+			buff_src++;
+			buff_src += copy_data(&(tuple_dst->fields[i].data.int_field), buff_src, field_size);
+			break;
+		case TS_FLOAT:
+			get_field_size(&field_size, buff_src);
+			buff_src++;
+			buff_src += copy_data(&(tuple_dst->fields[i].data.float_field), buff_src, field_size);
+			break;
+		case TS_STRING:
+			get_field_size(&field_size, buff_src);
+			buff_src++;
+			tuple_dst->fields[i].data.string_field = calloc(field_size, sizeof(unsigned char));
+			if (tuple_dst->fields[i].data.string_field == NULL)
+			{
+#ifdef ARDUINO
+				Serial.print("Memory alocation error");
+				Serial.print(__LINE__);
+				Serial.print(__FILE__);
+				Serial.print("\n");
+#endif
+#ifndef ARDUINO
+				printf("ERROR: %s (%s:%d)\n", strerror(errno), __FILE__, __LINE__);
+#endif
+			}
+			buff_src += copy_data(tuple_dst->fields[i].data.string_field, buff_src, field_size);
+			break;
+		}
+	}
+	return buff_src - buff_start_ptr;
 }
