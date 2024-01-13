@@ -16,61 +16,44 @@
 #include "D:\PSIR\proj\inc\header.h"
 #include "D:\PSIR\proj\inc\common.h"
 
-byte mac[] = {0x01, 0x11, 0xaa, 0x12, 0x44, 0x56};
+byte mac[] = {0x99, 0x11, 0xaa, 0x12, 0x44, 0x56};
 unsigned char buff[MAX_BUFF];
 ZsutEthernetUDP Udp;
 ZsutIPAddress server_ip = ZsutIPAddress(192, 168, 56, 103);
+
+int last_pin_state = 0;
 
 void setup()
 {
   ZsutEthernet.begin(mac);
   Serial.println(ZsutEthernet.localIP());
-  Udp.begin(APP1_WORKER_2_PORT);
+  Udp.begin(APP2_SENSOR_2_PORT);
   ts_init_client(buff, &Udp, &server_ip);
+  ZsutPinMode(ZSUT_PIN_D7, INPUT);
 }
-
 
 void loop()
 {
-  field_t templ[1];
-  templ[0].is_actual = TS_NO;
-  templ[0].type = TS_INT;
-  Tuple tuple = {"check_if_prime", templ, 1};
-  if (ts_in(tuple.name, tuple.fields, tuple.fields_size) == TS_SUCCESS)
-  {    
-    if (is_prime(tuple.fields[0].data.int_field) == True)
-    {
-      tuple.name = "is_prime";
+  int new_pin_state = read_pin_D7();
+  if(last_pin_state != new_pin_state){
+    field_t templ[1];
+    templ[0].is_actual = TS_YES;
+    templ[0].type = TS_STRING;
+    if(new_pin_state == 1){
+      templ[0].data.string_field = "0->1";
+    }else{
+      templ[0].data.string_field = "1->0";
     }
-    else
-    {
-      tuple.name = "is_not_prime";
-    }
-    t_print(&tuple);
+    Tuple tuple = {"sensor_change", templ, 1};
     if(ts_out(tuple.name, tuple.fields, tuple.fields_size) == TS_FAILURE){
-        Serial.println("TS_OUT Error");
+      Serial.println("Error: ts_out execution failed"); 
     }
+    last_pin_state = new_pin_state;
   }
-  else
-  {
-    Serial.println("TS_IN Error");
-  }
-  delay(3000);
 }
 
-
-Boolean is_prime(int n)
-{
-  if (n == 2 || n == 3)
-    return True;
-
-  if (n <= 1 || n % 2 == 0 || n % 3 == 0)
-    return False;
-
-  for (int i = 5; i * i <= n; i += 6)
-  {
-    if (n % i == 0 || n % (i + 2) == 0)
-      return False;
-  }
-  return True;
+int read_pin_D7(){
+  int a = ZsutDigitalRead();
+  if((a &= 0x80) == 128) return 1;
+  return 0; 
 }

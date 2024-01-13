@@ -11,7 +11,7 @@
 #define TS_SUCCESS 1
 #define TS_FAILURE 0
 
-#define MAX_TUPLE_SPACE 56
+#define MAX_TUPLE_SPACE 128
 
 typedef struct
 {
@@ -75,4 +75,5 @@ int fields_match(field_t *field1, field_t *field2);
 int tuple_matches(Tuple *tuple, char *name, field_t *fields, int fields_size);
 int find_matched_tuple(char *name, field_t *fields, int fields_size, int *found_index);
 int delete_tupe_from_tuple_space(int tuple_index);
+int ts_get_number_of_tuples();
 #endif

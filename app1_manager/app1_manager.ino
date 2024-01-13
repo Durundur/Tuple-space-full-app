@@ -21,7 +21,7 @@ unsigned char buff[MAX_BUFF];
 ZsutEthernetUDP Udp;
 ZsutIPAddress server_ip = ZsutIPAddress(192, 168, 56, 103);
 
-int N = 5;
+int N = 20;
 int state = 0;
 int output_counter = 2;
 int input_counter = 0;
@@ -62,7 +62,7 @@ void loop()
     templ[0].type = TS_INT;
     Tuple tuple = {"is_prime", templ, 1};
     if(ts_inp(tuple.name, tuple.fields, tuple.fields_size) == TS_FAILURE){
-      Serial.println("TS_INP Error");
+      Serial.println("TS_INP Error, can't find tuple");
     }
     else{
       t_print(&tuple);
@@ -80,7 +80,7 @@ void loop()
     templ[0].type = TS_INT;
     Tuple tuple = {"is_not_prime", templ, 1};
     if(ts_inp(tuple.name, tuple.fields, tuple.fields_size) == TS_FAILURE){
-      Serial.println("TS_INP Error");
+      Serial.println("TS_INP Error, can't find tuple");
     }
     else{
       t_print(&tuple);

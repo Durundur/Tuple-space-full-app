@@ -247,23 +247,14 @@ void ts_print()
 	}
 }
 
+int ts_get_number_of_tuples(){
+	return tuple_space.size;
+}
+
 void ts_init()
 {
 	tuple_space.tuples = malloc(MAX_TUPLE_SPACE * sizeof(Tuple));
 	tuple_space.size = 0;
-
-	// field_t templ[1];
-	// templ[0].is_actual = TS_YES;
-	// templ[0].type = TS_INT;
-	// templ[0].data.int_field = 4;
-	// ts_add("check_if_prime", templ, 1);
-	// templ[0].data.int_field = 12;
-	// ts_add("check_if_prime", templ, 1);
-	// templ[0].data.int_field = 13;
-	// ts_add("check_if_prime", templ, 1);
-	// templ[0].data.int_field = 55;
-	// ts_add("check_if_prime", templ, 1);
-	// ts_print();
 }
 
 int copy_tuple_to_template(char *name, field_t *fields, int fields_size, int tuple_index_in_tuple_space)
@@ -285,8 +276,7 @@ int copy_tuple_to_template(char *name, field_t *fields, int fields_size, int tup
 			}
 			if ((fields + i)->type == TS_STRING)
 			{
-				// czy tu trzeba zwolnic name
-				// free((fields + i)->data.string_field);
+				free((fields + i)->data.string_field);
 				(fields + i)->data.string_field = strdup(((t->fields) + i)->data.string_field);
 				(fields + i)->is_actual = TS_YES;
 			}
