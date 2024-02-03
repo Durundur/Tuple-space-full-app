@@ -13,4 +13,6 @@
 #define APP2_SENSOR_PORT 6670
 #define APP2_SENSOR_2_PORT 6671
 
+#define VERSION_NUMBER 1
+
 #endif

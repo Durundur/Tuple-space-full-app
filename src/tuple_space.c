@@ -48,7 +48,7 @@ int ts_send_and_receive(uint8_t *buff, int buff_len, Tuple *tuple_dst)
 int ts_out(char *name, field_t *fields, int fields_size)
 {
 	Tuple tuple = {name, fields, fields_size};
-	int buff_len = serialize_message(buff_ptr, &tuple, 1, PROTOCOL_TS_OUT_MESSAGE);
+	int buff_len = serialize_message(buff_ptr, &tuple, VERSION_NUMBER, PROTOCOL_TS_OUT_MESSAGE);
 	if (buff_len > 0)
 	{
 		if (ts_send_and_receive(buff_ptr, buff_len, &tuple) == TS_SUCCESS)
@@ -62,7 +62,7 @@ int ts_out(char *name, field_t *fields, int fields_size)
 int ts_rdp(char *name, field_t *fields, int fields_size)
 {
 	Tuple tuple = {name, fields, fields_size};
-	int buff_len = serialize_message(buff_ptr, &tuple, 1, PROTOCOL_TS_RDP_MESSAGE);
+	int buff_len = serialize_message(buff_ptr, &tuple, VERSION_NUMBER, PROTOCOL_TS_RDP_MESSAGE);
 	if (buff_len > 0)
 	{
 		if (ts_send_and_receive(buff_ptr, buff_len, &tuple) == TS_SUCCESS)
@@ -79,7 +79,7 @@ int ts_rdp(char *name, field_t *fields, int fields_size)
 int ts_rd(char *name, field_t *fields, int fields_size)
 {
 	Tuple tuple = {name, fields, fields_size};
-	int buff_len = serialize_message(buff_ptr, &tuple, 1, PROTOCOL_TS_RD_MESSAGE);
+	int buff_len = serialize_message(buff_ptr, &tuple, VERSION_NUMBER, PROTOCOL_TS_RD_MESSAGE);
 	if (buff_len > 0)
 	{
 		if (ts_send_and_receive(buff_ptr, buff_len, &tuple) == TS_SUCCESS)
@@ -96,7 +96,7 @@ int ts_rd(char *name, field_t *fields, int fields_size)
 int ts_inp(char *name, field_t *fields, int fields_size)
 {
 	Tuple tuple = {name, fields, fields_size};
-	int buff_len = serialize_message(buff_ptr, &tuple, 1, PROTOCOL_TS_INP_MESSAGE);
+	int buff_len = serialize_message(buff_ptr, &tuple, VERSION_NUMBER, PROTOCOL_TS_INP_MESSAGE);
 	if (buff_len > 0)
 	{
 		if (ts_send_and_receive(buff_ptr, buff_len, &tuple) == TS_SUCCESS)
@@ -113,7 +113,7 @@ int ts_inp(char *name, field_t *fields, int fields_size)
 int ts_in(char *name, field_t *fields, int fields_size)
 {
 	Tuple tuple = {name, fields, fields_size};
-	int buff_len = serialize_message(buff_ptr, &tuple, 1, PROTOCOL_TS_IN_MESSAGE);
+	int buff_len = serialize_message(buff_ptr, &tuple, VERSION_NUMBER, PROTOCOL_TS_IN_MESSAGE);
 	if (buff_len > 0)
 	{
 		if (ts_send_and_receive(buff_ptr, buff_len, &tuple) == TS_SUCCESS)
@@ -247,7 +247,8 @@ void ts_print()
 	}
 }
 
-int ts_get_number_of_tuples(){
+int ts_get_number_of_tuples()
+{
 	return tuple_space.size;
 }
 

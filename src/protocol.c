@@ -27,11 +27,13 @@ int deserialize_message(Tuple *tuple_dst, uint8_t *buff_src, int *version, int *
 	uint8_t *buff_start_ptr = buff_src;
 	get_version_and_payload_type(version, message_type, buff_src);
 	buff_src++;
-	get_payload_size(&(tuple_dst->fields_size), buff_src);
-	if (tuple_dst->fields_size == 0)
+	int field_size = 0;
+	get_payload_size(&(field_size), buff_src);
+	if (field_size == 0)
 	{
 		return TS_SUCCESS;
 	}
+	tuple_dst->fields_size = field_size - 1;
 	buff_src++;
 	buff_src += get_tuple_name_from_buff(tuple_dst, buff_src);
 	buff_src += get_fields_from_buff(tuple_dst, buff_src);
@@ -44,7 +46,7 @@ int serialize_short_message(uint8_t *buff_dst, int version, int message_type)
 	memset(buff_dst, 0, MAX_BUFF);
 	set_version_and_payload_type(buff_dst, version, message_type);
 	buff_dst++;
-	set_payload_size(buff_dst, 1);
+	set_payload_size(buff_dst, 0);
 	buff_dst++;
 	return buff_dst - buff_start_ptr;
 }
@@ -135,7 +137,7 @@ void get_version_and_payload_type(int *version_dst, int *payload_type_dst, const
 
 void get_payload_size(int *payload_size_dst, const uint8_t *buff_src)
 {
-	*payload_size_dst = (*buff_src & 0xFF) - 1;
+	*payload_size_dst = (*buff_src & 0xFF);
 }
 
 void get_is_actual_and_field_type(int *field_is_actual_dst, int *field_type_dst, const uint8_t *buff_src)
@@ -235,6 +237,16 @@ int get_fields_from_buff(Tuple *tuple_dst, uint8_t *buff_src)
 			}
 			buff_src += copy_data(tuple_dst->fields[i].data.string_field, buff_src, field_size);
 			break;
+		default:
+#ifdef ARDUINO
+			Serial.print("Unknown field type");
+			Serial.print(__LINE__);
+			Serial.print(__FILE__);
+			Serial.print("\n");
+#endif
+#ifndef ARDUINO
+			printf("Unknown field type \n");
+#endif
 		}
 	}
 	return buff_src - buff_start_ptr;

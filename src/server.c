@@ -59,12 +59,12 @@ int process_request(Tuple *tuple, uint8_t *buff, int message_type)
 		if (ts_add(tuple->name, tuple->fields, tuple->fields_size) == TS_SUCCESS)
 		{
 			//ts_print();
-			return serialize_short_message(buff, 1, PROTOCOL_TS_SUCCESS);
+			return serialize_short_message(buff, VERSION_NUMBER, PROTOCOL_TS_SUCCESS);
 		}
 		else
 		{
 			printf("ERROR while adding new tuple (%s:%d)\n", __FILE__, __LINE__);
-			return serialize_short_message(buff, 1, PROTOCOL_TS_FAILURE);
+			return serialize_short_message(buff, VERSION_NUMBER, PROTOCOL_TS_FAILURE);
 		}
 	case PROTOCOL_TS_IN_MESSAGE:
 		received_in_requests++;
@@ -72,13 +72,13 @@ int process_request(Tuple *tuple, uint8_t *buff, int message_type)
 		{
 			if (ts_get_tuple_and_remove(tuple->name, tuple->fields, tuple->fields_size) == TS_SUCCESS)
 			{
-				int serialize_len = serialize_message(buff, tuple, 1, PROTOCOL_TS_SUCCESS);
+				int serialize_len = serialize_message(buff, tuple, VERSION_NUMBER, PROTOCOL_TS_SUCCESS);
 				if (serialize_len > 0)
 				{
 					//ts_print();
 					return serialize_len;
 				}
-				return serialize_short_message(buff, 1, PROTOCOL_TS_FAILURE);
+				return serialize_short_message(buff, VERSION_NUMBER, PROTOCOL_TS_FAILURE);
 			}
 		}
 
@@ -86,14 +86,14 @@ int process_request(Tuple *tuple, uint8_t *buff, int message_type)
 		received_inp_requests++;
 		if (ts_get_tuple_and_remove(tuple->name, tuple->fields, tuple->fields_size) == TS_SUCCESS)
 		{
-			int serialize_len = serialize_message(buff, tuple, 1, PROTOCOL_TS_SUCCESS);
+			int serialize_len = serialize_message(buff, tuple, VERSION_NUMBER, PROTOCOL_TS_SUCCESS);
 			if (serialize_len > 0)
 			{
 				//ts_print();
 				return serialize_len;
 			}
 		}
-		return serialize_short_message(buff, 1, PROTOCOL_TS_FAILURE);
+		return serialize_short_message(buff, VERSION_NUMBER, PROTOCOL_TS_FAILURE);
 
 	case PROTOCOL_TS_RD_MESSAGE:
 		received_rd_requests++;
@@ -101,13 +101,13 @@ int process_request(Tuple *tuple, uint8_t *buff, int message_type)
 		{
 			if (ts_get_tuple(tuple->name, tuple->fields, tuple->fields_size) == TS_SUCCESS)
 			{
-				int serialize_len = serialize_message(buff, tuple, 1, PROTOCOL_TS_SUCCESS);
+				int serialize_len = serialize_message(buff, tuple, VERSION_NUMBER, PROTOCOL_TS_SUCCESS);
 				if (serialize_len > 0)
 				{
 					//ts_print();
 					return serialize_len;
 				}
-				return serialize_short_message(buff, 1, PROTOCOL_TS_FAILURE);
+				return serialize_short_message(buff, VERSION_NUMBER, PROTOCOL_TS_FAILURE);
 			}
 		}
 
@@ -115,7 +115,7 @@ int process_request(Tuple *tuple, uint8_t *buff, int message_type)
 		received_rdp_requests++;
 		if (ts_get_tuple(tuple->name, tuple->fields, tuple->fields_size) == TS_SUCCESS)
 		{
-			int serialize_len = serialize_message(buff, tuple, 1, PROTOCOL_TS_SUCCESS);
+			int serialize_len = serialize_message(buff, tuple, VERSION_NUMBER, PROTOCOL_TS_SUCCESS);
 			if (serialize_len > 0)
 			{
 				//ts_print();
@@ -172,6 +172,7 @@ int main()
 		printf("Received in requests: %d \n", received_in_requests);
 		printf("Received rdp requests: %d \n", received_rdp_requests);
 		printf("Received rd requests: %d \n", received_rd_requests);
+		printf("---------------------------------------------------- \n");
 
 		thread_task_args *args = malloc(sizeof(thread_task_args));
 		args->s = s;

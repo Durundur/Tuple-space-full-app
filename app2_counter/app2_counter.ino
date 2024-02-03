@@ -39,18 +39,15 @@ void setup()
 
 void loop()
 {
+  delay(2000);
   field_t templ[1];
   if (state == 0)
   {
     templ[0].is_actual = TS_NO;
     templ[0].type = TS_STRING;
     Tuple tuple = {"sensor_change", templ, 1};
-    if (ts_in(tuple.name, tuple.fields, tuple.fields_size) == TS_FAILURE)
-    {
-      Serial.println("TS_IN Error, can't find tuple");
-    }
-    else
-    {
+    if (ts_inp(tuple.name, tuple.fields, tuple.fields_size) == TS_SUCCESS)
+   {
       if (strcmp(tuple.fields[0].data.string_field, "0->1") == 0)
       {
         from_0_to_1_counter++;

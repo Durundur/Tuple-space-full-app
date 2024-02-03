@@ -1,0 +1,22 @@
+#Opis zasobow
++ d7PinState,state,D7
+#test nr.1
+: 	 3750000, d7PinState, 0
+:	 7500000, d7PinState, 1
+:	11250000, d7PinState, 0
+:   15000000, d7PinState, 0
+:   18750000, d7PinState, 1
+:   22500000, d7PinState, 1
+:   26250000, d7PinState, 0
+:   30000000, d7PinState, 1
+:   33750000, d7PinState, 0
+:   37500000, d7PinState, 1
+:   41250000, d7PinState, 1
+:   45000000, d7PinState, 0
+:   48750000, d7PinState, 0
+:   52500000, d7PinState, 1
+:   56250000, d7PinState, 0
+:   60000000, d7PinState, 0
+:   63750000, d7PinState, 1
+:   67500000, d7PinState, 0
+:   71250000, d7PinState, 0
